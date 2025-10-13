@@ -1,0 +1,42 @@
+{
+  "format_version": 2,
+  "header": {
+      "description": "Everytime you earn a level your borader increases by 1 block.",
+      "name": "Level = Boder",
+      "uuid": "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
+      "version": [ 3, 0, 0],
+      "min_engine_version": [1, 21, 90]
+  },
+  "modules": [
+    {
+        "description": "",
+        "type": "data",
+        "uuid": "593bd18c-815f-4e5e-bfe9-11ac21df8a42",
+        "version": [1, 0, 0]
+    },
+    {
+      "description": "",
+        "type": "script",
+        "uuid": "1a18c475-1e32-458d-a400-8d3a055311d9",
+        "version": [1, 0, 0],
+        "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name":"@minecraft/server",
+      "version":"2.0.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "2.0.0"
+    },
+    {
+      "uuid": "c4d3852f-f902-4807-a8c8-51980fdae4c3",
+      "version": [ 5, 4, 0]
+    }
+ ],
+  "metadata": {
+    "product_type": "addon"
+  }
+}
