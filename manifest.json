@@ -1,7 +1,7 @@
 {
   "format_version": 2,
   "header": {
-      "description": "Everytime you earn a level your borader increases by 1 block.",
+      "description": "Everytime you earn a level your borader increases by 1 block!",
       "name": "Level = Boder",
       "uuid": "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
       "version": [ 3, 0, 0],
