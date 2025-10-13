@@ -23,7 +23,7 @@ const version_info = {
 }
 
 const links = [
-  {name: "§l§5Github:§r", link: "github.com/TheFelixLive/Level=Boder"},
+  {name: "§l§5Github:§r", link: "github.com/TheFelixLive/Level-Boder"},
   {name: "§l§aMcpedl:§r", link: "mcpedl.com/Level=Boder"},
 ]
 

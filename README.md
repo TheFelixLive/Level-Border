@@ -8,7 +8,7 @@ Everytime you earn a level your borader increases by 1 block.
 > [!NOTE]
 > Make sure that both the Challenge and the Timer are using the same CCS (Challenge Communication System) Version!
 
-1. **Download** the latest challenge release from [here](https://github.com/TheFelixLive/Level=Boder/releases/latest).
+1. **Download** the latest challenge release from [here](https://github.com/TheFelixLive/Level-Boder/releases/latest).
 2. **Download** the best timer release, mostlikely from [here](https://github.com/TheFelixLive/Timer-V/releases/latest).
 3. **Open** both `.mcpack` or `.mcaddon` files with Minecraft.
 4. **Create** a new world OR **edit** an existing world
@@ -27,7 +27,7 @@ You are allowed to use code snippets from this repository in your own projects u
    ```
    /* ─────────────────────────────────────────────────────────
       This code is part of Level = Boder by TheFelixLive:
-      https://github.com/TheFelixLive/Level=Boder
+      https://github.com/TheFelixLive/Level-Boder
    ─────────────────────────────────────────────────────────*/
    ```
 
