@@ -5,9 +5,9 @@ import { ActionFormData, ModalFormData, MessageFormData  } from "@minecraft/serv
 const version_info = {
   name: "Level = Boder",
   version: "v.3.0.0",
-  build: "B002",
+  build: "B003",
   release_type: 0, // 0 = Development version (with debug); 1 = Beta version; 2 = Stable version
-  unix: 1760388861,
+  unix: 1760442313,
   uuid: "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
   changelog: {
     // new_features
@@ -399,7 +399,7 @@ function spawnBorderParticles(player, level) {
   const px = player.location.x;
   const py = player.location.y;
   const pz = player.location.z;
-  const radius = 25;
+  const radius = 10;
 
   // Bereich 5 Blöcke über und unter dem Spieler
   const yStart = Math.floor(py - 3);
@@ -412,7 +412,10 @@ function spawnBorderParticles(player, level) {
       const zEnd   = Math.min(level, Math.floor(pz + radius));
       for (let z = zStart; z <= zEnd; z++) {
         for (let y = yStart; y <= yEnd; y++) {
-          player.spawnParticle("minecraft:basic_portal_particle", { x: borderX, y, z });
+          try {
+            player.spawnParticle("minecraft:basic_portal_particle", { x: borderX, y: y, z: z });
+          } catch (e) {
+          }
         }
       }
     }
@@ -425,7 +428,10 @@ function spawnBorderParticles(player, level) {
       const xEnd   = Math.min(level, Math.floor(px + radius));
       for (let x = xStart; x <= xEnd; x++) {
         for (let y = yStart; y <= yEnd; y++) {
-          player.spawnParticle("minecraft:basic_portal_particle", { x, y, z: borderZ });
+          try {
+            player.spawnParticle("minecraft:basic_portal_particle", { x: x, y: y, z: borderZ });
+          } catch (e) {
+          }
         }
       }
     }
