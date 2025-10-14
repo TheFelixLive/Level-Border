@@ -1,8 +1,12 @@
 # Level = Boder
-Comming Soon
+<img src="https://github.com/user-attachments/assets/732bc334-0a62-4ed6-98b9-41360e248416" width="1920" height="auto" />
+
 
 ## About
-Everytime you earn a level your borader increases by 1 block.
+Are you bored of defeating the Ender Dragon for the 600th time?
+In this Minecraft Bedrock Challenge, you have a boader that increases with each level!
+Can you defeat the Wither or Ender Dragon with it?
+
 
 # Installation
 > [!NOTE]
