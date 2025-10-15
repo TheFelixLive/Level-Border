@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for the Com2Hard
+about: Suggest an idea for the Level = Border
 title: ''
 labels: enhancement
 assignees: 'TheFelixLive'

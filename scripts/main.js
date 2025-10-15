@@ -5,9 +5,9 @@ import { ActionFormData, ModalFormData, MessageFormData  } from "@minecraft/serv
 const version_info = {
   name: "Level = Border",
   version: "v.3.0.0",
-  build: "B004",
+  build: "B005",
   release_type: 0, // 0 = Development version (with debug); 1 = Beta version; 2 = Stable version
-  unix: 1760529025,
+  unix: 1760529107,
   uuid: "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
   changelog: {
     // new_features

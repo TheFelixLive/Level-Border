@@ -28,20 +28,5 @@ If you put the addon on a server you will lose your privileges
 - Addon version: [e.g. v.2.0.0]
 - Minecraft version: [e.g. v.1.21.90]
 
-
-## 💾 Latest SD Dump
-<!-- SD stands for Save Data and helps identify the problem faster.
-To create a dump:
-
-1. Make sure you have Admin privileges
-2. Open the menu
-3. Navigate to Settings
-4. Click on "About"
-5. Then click on "Contact"
-6. Dump the SD data
--->
-
-> Paste the dump here as a screenshot or plain text.
-
 ## 📝 Additional context
 <!-- Optional: Add any other context about the problem here. -->
