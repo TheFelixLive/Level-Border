@@ -3,11 +3,11 @@ import { ActionFormData, ModalFormData, MessageFormData  } from "@minecraft/serv
 
 
 const version_info = {
-  name: "Level = Boder",
+  name: "Level = Border",
   version: "v.3.0.0",
-  build: "B003",
+  build: "B004",
   release_type: 0, // 0 = Development version (with debug); 1 = Beta version; 2 = Stable version
-  unix: 1760442313,
+  unix: 1760529025,
   uuid: "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
   changelog: {
     // new_features
@@ -30,7 +30,7 @@ const version_info = {
 
 const links = [
   {name: "§l§5Github:§r", link: "github.com/TheFelixLive/Level-Boder"},
-  {name: "§l§aMcpedl:§r", link: "mcpedl.com/Level=Boder"},
+  {name: "§l§aMcpedl:§r", link: "mcpedl.com/level-boder"},
 ]
 
 console.log("Hello from " + version_info.name + " - "+version_info.version+" ("+version_info.build+") - Further debugging is "+ (version_info.release_type == 0? "enabled" : "disabled" ) + " by the version")
@@ -775,7 +775,7 @@ async function update_loop() {
         if (level !== oldLevel) {
             if (level > oldLevel && level !== 24791) {
                 player.runCommand('playsound random.orb @a');
-                player.sendMessage('§l§c[§bWorld Boader§c]§r The world border expant to §l§a'+ level +' Blocks§r!');
+                player.sendMessage('§l§c[§bWorld Border§c]§r The world border expant to §l§a'+ level +' Blocks§r!');
             }
 
             if (level < oldLevel && level !== 24791) {
@@ -789,7 +789,7 @@ async function update_loop() {
 
             if (level == 24791) {
                 player.runCommand('playsound random.orb @a');
-                player.sendMessage('§l§c[§bWorld Boader§c]§r The world border is turned off because you have reached the maximum level of §l§a'+ level +'§r!');
+                player.sendMessage('§l§c[§bWorld Border§c]§r The world border is turned off because you have reached the maximum level of §l§a'+ level +'§r!');
             }
 
             oldLevel = level;
