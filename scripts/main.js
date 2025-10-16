@@ -1,29 +1,26 @@
-import { system, world} from "@minecraft/server";
+import { System, system, world} from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData  } from "@minecraft/server-ui"
 
 
 const version_info = {
   name: "Level = Border",
-  version: "v.3.0.0",
-  build: "B005",
+  version: "v.3.0.1",
+  build: "B006",
   release_type: 0, // 0 = Development version (with debug); 1 = Beta version; 2 = Stable version
-  unix: 1760529107,
+  unix: 1760609911,
   uuid: "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
   changelog: {
     // new_features
     new_features: [
-      "Added Changelogs and About section",
-      "Added Contact section",
-      "Added GitHub API for update checking",
     ],
     // general_changes
     general_changes: [
-      "Border particles are more dense",
+      "Added a Message if the Timer is not correctly installed",
+      "Fixed spelling mistakes"
     ],
     // bug_fixes
     bug_fixes: [
-      "Border teleportation should be more reliable",
-      "Border particles should now work correctly"
+      "Border teleportation should be more reliable"
     ]
   }
 }
@@ -402,8 +399,8 @@ function spawnBorderParticles(player, level) {
   const radius = 10;
 
   // Bereich 5 Blöcke über und unter dem Spieler
-  const yStart = Math.floor(py - 3);
-  const yEnd   = Math.floor(py + 3);
+  const yStart = Math.floor(py - 2);
+  const yEnd   = Math.floor(py + 4);
 
   // X-Ränder bei x = ±level
   for (const borderX of [-level, level]) {
@@ -437,6 +434,22 @@ function spawnBorderParticles(player, level) {
     }
   }
 }
+
+/*------------------------
+ Welcome Message
+-------------------------*/
+
+world.afterEvents.playerSpawn.subscribe(async (eventData) => {
+  const { player, initialSpawn } = eventData;
+  if (!initialSpawn) return -1
+
+  await system.waitTicks(40); // Wait for the player to be fully joined
+
+  if (version_info.release_type !== 2 && player.playerPermissionLevel === 2) {
+    player.sendMessage("§l§7[§f" + ("System") + "§7]§r "+ player.name +" how is your experiences with "+ version_info.version +"? Does it meet your expectations? Would you like to change something and if so, what? Do you have a suggestion for a new feature? Share it at §l"+links[0].link)
+    player.playSound("random.pop")
+  }
+});
 
 
 
@@ -726,9 +739,17 @@ function dictionary_contact(player) {
 
 async function update_loop() {
   let oldLevel = 0;
+  await system.waitTicks(3);
   while (true) {
 
     for (const player of world.getAllPlayers()) {
+
+      if (!is_initialized) {
+        player.sendMessage('§l§4[§cError§4]§r The timer is not installed correctly! Check that the timer is active and has the correct CCS version.');
+        player.playSound("random.pop")
+        return -1;
+      }
+
       const x = player.location.x;
       const z = player.location.z;
 
@@ -763,7 +784,19 @@ async function update_loop() {
       // Out of borader message + teleport
       if (challenge_running) {
         if (outsideBorder && level < 24791) {
-            player.teleport({ x: newX, y: player.location.y, z: newZ }, {checkForBlocks: true});
+          player.teleport({ x: newX, y: player.location.y, z: newZ });
+
+          try {
+            if (!(player.dimension.getBlock({ x: newX, y: player.location.y, z: newZ }).isAir && player.dimension.getBlock({ x: newX, y: player.location.y+1, z: newZ }).isAir)) {
+              player.teleport({ x: newX, y: (player.dimension.getTopmostBlock({x: newX, z: newZ}).y + 1), z: newZ });
+            }
+          } catch(e) {
+            player.teleport({ x: newX, y: (player.dimension.getTopmostBlock({x: newX, z: newZ}).y + 1), z: newZ });
+          }
+
+
+
+
         }
 
         // particle

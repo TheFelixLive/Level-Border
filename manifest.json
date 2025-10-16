@@ -4,7 +4,7 @@
       "description": "Everytime you earn a level your border increases by 1 block!",
       "name": "Level = Border",
       "uuid": "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
-      "version": [ 3, 0, 0],
+      "version": [ 3, 0, 1],
       "min_engine_version": [1, 21, 90]
   },
   "modules": [
