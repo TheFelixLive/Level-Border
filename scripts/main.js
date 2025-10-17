@@ -1,32 +1,36 @@
-import { System, system, world} from "@minecraft/server";
+import { system, world} from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData  } from "@minecraft/server-ui"
 
 
 const version_info = {
   name: "Level = Border",
-  version: "v.3.0.1",
-  build: "B006",
+  version: "v.3.1.0",
+  build: "B007",
   release_type: 0, // 0 = Development version (with debug); 1 = Beta version; 2 = Stable version
-  unix: 1760609911,
+  unix: 1760717264,
   uuid: "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
   changelog: {
     // new_features
     new_features: [
+      "The boarder particle effect can now be adjusted",
+      "One boarder for all players can now be adjusted"
     ],
     // general_changes
     general_changes: [
-      "Added a Message if the Timer is not correctly installed",
-      "Fixed spelling mistakes"
+      "Added Support for CCS V2"
     ],
     // bug_fixes
     bug_fixes: [
-      "Border teleportation should be more reliable"
+      "Fixed online Changelog",
+      "Fixed a critical bug that prevented multiplayer",
+      "Border teleportation should be more reliable",
     ]
   }
 }
 
 const links = [
   {name: "§l§5Github:§r", link: "github.com/TheFelixLive/Level-Boder"},
+  {name: "§l§8Curseforge:§r", link: "curseforge.com/projects/1365111"},
   {name: "§l§aMcpedl:§r", link: "mcpedl.com/level-boder"},
 ]
 
@@ -35,7 +39,7 @@ console.log("Hello from " + version_info.name + " - "+version_info.version+" ("+
 
 
 /*------------------------
-  Challenge Communication System V1
+  Challenge Communication System V2
 -------------------------*/
 
 // Status
@@ -62,16 +66,16 @@ system.afterEvents.scriptEventReceive.subscribe(async event=> {
 
 
     // Initializing
-    if (data.event == "ccs_initializing") {
+    if (data.event == "ccs_initializing_v2") {
       scoreboard.removeParticipant(JSON.stringify(data))
 
       data.data.push({
         uuid: version_info.uuid,
         name: version_info.name,
         icon: "textures/items/experience_bottle",
-        config_available: false,
+        config_available: true,
         about_available: true,
-        incompatibilities: [""], // List of UUIDs which are incompatible with this challenge
+        incompatibilities: [], // List of UUIDs which are incompatible with this challenge
       })
 
       is_initialized = true
@@ -82,13 +86,19 @@ system.afterEvents.scriptEventReceive.subscribe(async event=> {
 
     if (!is_initialized) return -1;
 
+    // Will open the configuration menu of the challenge
+    if (data.event == "ccs_config" && data.data.target == version_info.uuid) {
+      world.scoreboard.removeObjective("ccs_data")
+      config(player)
+    }
+
     if (data.event == "ccs_about" && data.data.target == version_info.uuid) {
       world.scoreboard.removeObjective("ccs_data")
       dictionary_about(player)
     }
 
     // Will start the challenge running scripts
-    if (data.event == "ccs_start" && data.data.target.includes(version_info.uuid)) {
+    if ((data.event == "ccs_start" || data.event == "ccs_resume") && data.data.target.includes(version_info.uuid)) {
       scoreboard.removeParticipant(JSON.stringify(data))
 
       // Removes itself from the target list
@@ -102,7 +112,7 @@ system.afterEvents.scriptEventReceive.subscribe(async event=> {
     }
 
     // Will stop the challenge running scripts
-    if (data.event == "ccs_stop" && data.data.target == version_info.uuid) {
+    if ((data.event == "ccs_stop" || data.event == "ccs_pause") && data.data.target == version_info.uuid) {
       scoreboard.removeParticipant(JSON.stringify(data))
 
       // Removes itself from the target list
@@ -118,6 +128,72 @@ system.afterEvents.scriptEventReceive.subscribe(async event=> {
 })
 
 /*------------------------
+ Save Data
+-------------------------*/
+
+// Creates or Updates Save Data if not present
+system.run(() => {
+  let save_data = load_save_data();
+
+  const default_save_data_structure = {border_effects_index: 0, one_boarder: true};
+
+  if (!save_data) {
+      save_data = [default_save_data_structure];
+      print("Creating save_data...");
+  } else {
+      let data_entry = save_data[0];
+      let changes_made = false;
+
+      function merge_defaults(target, defaults) {
+          for (const key in defaults) {
+              if (defaults.hasOwnProperty(key)) {
+                  if (!target.hasOwnProperty(key)) {
+                      target[key] = defaults[key];
+                      changes_made = true;
+                  } else if (typeof defaults[key] === 'object' && defaults[key] !== null && !Array.isArray(defaults[key])) {
+                      if (typeof target[key] !== 'object' || target[key] === null || Array.isArray(target[key])) {
+                          target[key] = defaults[key];
+                          changes_made = true;
+                      } else {
+                          merge_defaults(target[key], defaults[key]);
+                      }
+                  }
+              }
+          }
+      }
+
+      merge_defaults(data_entry, default_save_data_structure);
+      if (!Array.isArray(save_data) || save_data.length === 0) {
+          save_data = [data_entry];
+          changes_made = true;
+      } else {
+          save_data[0] = data_entry;
+      }
+
+      if (changes_made) {
+          print("Missing save_data attributes found and added.");
+      }
+  }
+
+  update_save_data(save_data);
+})
+
+// Load & Save Save data
+function load_save_data() {
+    let rawData = world.getDynamicProperty("l=b:save_data");
+
+    if (!rawData) {
+        return;
+    }
+
+    return JSON.parse(rawData);
+}
+
+function update_save_data(input) {
+  world.setDynamicProperty("l=b:save_data", JSON.stringify(input))
+};
+
+/*------------------------
  Helper functions
 -------------------------*/
 
@@ -125,6 +201,151 @@ function print(input) {
   if (version_info.release_type === 0) {
     console.log(version_info.name + " - " + JSON.stringify(input))
   }
+}
+
+function markdownToMinecraft(md) {
+  if (typeof md !== 'string') return '';
+
+  // normalize newlines
+  md = md.replace(/\r\n?/g, '\n');
+
+  const UNSUPPORTED_MSG = '§o§7Tabelles are not supported! Visit GitHub for this.';
+
+  // helper: map admonition type -> minecraft color code (choose sensible defaults)
+  function admonColor(type) {
+    const t = (type || '').toLowerCase();
+    if (['caution', 'warning', 'danger', 'important'].includes(t)) return '§c'; // red
+    if (['note', 'info', 'tip', 'hint'].includes(t)) return '§b'; // aqua
+    return '§e'; // fallback: yellow
+  }
+
+  // inline processor (handles code spans first, then bold/italic/strike, links/images, etc.)
+  function processInline(text) {
+    if (!text) return '';
+
+    // tokenise code spans to avoid further processing inside them
+    const tokens = [];
+    text = text.replace(/(`+)([\s\S]*?)\1/g, (m, ticks, code) => {
+      const safe = code.replace(/\n+/g, ' '); // inline code -> single line
+      const repl = '§7' + safe + '§r';
+      tokens.push(repl);
+      return `__MD_TOKEN_${tokens.length - 1}__`;
+    });
+
+    // images -> unsupported (replace whole image with message)
+    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, () => UNSUPPORTED_MSG);
+
+    // links -> keep link text only (no URL)
+    text = text.replace(/\[([^\]]+)\]\((?:[^)]+)\)/g, '$1');
+
+    // bold: **text** or __text__ -> §ltext§r
+    text = text.replace(/(\*\*|__)(?=\S)([\s\S]*?\S)\1/g, '§l$2§r');
+
+    // italic: *text* or _text_ -> §otext§r
+    // (do after bold so that **...** won't be partially matched)
+    text = text.replace(/(\*|_)(?=\S)([\s\S]*?\S)\1/g, '§o$2§r');
+
+    // strikethrough: ~~text~~ -> use italic+gray as fallback (no §m)
+    text = text.replace(/~~([\s\S]*?)~~/g, '§o§7$1§r');
+
+    // simple HTML tags or raw tags -> treat as unsupported (avoid exposing markup)
+    if (/<\/?[a-z][\s\S]*?>/i.test(text)) return UNSUPPORTED_MSG;
+
+    // restore code tokens
+    text = text.replace(/__MD_TOKEN_(\d+)__/g, (m, idx) => tokens[Number(idx)] || '');
+
+    return text;
+  }
+
+  // 1) Replace fenced code blocks (```...```) with unsupported message
+  md = md.replace(/```[\s\S]*?```/g, () => UNSUPPORTED_MSG);
+
+  // 2) Replace GitHub-style admonition blocks: ::: type\n...\n:::
+  md = md.replace(/::: *([A-Za-z0-9_-]+)\s*\n([\s\S]*?)\n:::/gmi, (m, type, content) => {
+    // flatten content lines, then process inline inside
+    const inner = processInline(content.replace(/\n+/g, ' ').trim());
+    const cap = type.charAt(0).toUpperCase() + type.slice(1);
+    return `§l${admonColor(type)}${cap}: ${inner}§r`;
+  });
+
+  // now process line-by-line for tables / headings / lists / blockquotes / admonitions-as-blockquotes
+  const lines = md.split('\n');
+  const out = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // trim trailing CR/ spaces
+    const raw = line;
+
+    //  ---- detect table: a row with '|' and a following separator row like "| --- | --- |" or "---|---"
+    const nextLine = lines[i + 1] || '';
+    const isTableRow = /\|/.test(line);
+    const nextIsSeparator = /^\s*\|?[:\-\s|]+$/.test(nextLine);
+    if (isTableRow && nextIsSeparator) {
+      // consume all contiguous table rows
+      out.push(UNSUPPORTED_MSG);
+      i++; // skip the separator
+      while (i + 1 < lines.length && /\|/.test(lines[i + 1])) i++;
+      continue;
+    }
+
+    //  ---- headings (#, ##, ###) -> §l + content + §r + \n
+    const hMatch = line.match(/^(#{1,3})\s*(.*)$/);
+    if (hMatch) {
+      const content = hMatch[2].trim();
+      out.push('§l' + processInline(content) + '§r\n');
+      continue;
+    }
+
+    //  ---- GitHub-style single-line admonition in > or plain "Caution: ..." at line start
+    const admonLineMatch = raw.match(/^\s*(?:>\s*)?(?:\*\*)?(Caution|Warning|Note|Tip|Important|Danger|Info)(?:\*\*)?:\s*(.+)$/i);
+    if (admonLineMatch) {
+      const type = admonLineMatch[1];
+      const content = admonLineMatch[2].trim();
+      out.push(`§l${admonColor(type)}${type}: ${processInline(content)}§r`);
+      continue;
+    }
+
+    //  ---- blockquote lines starting with '>'
+    if (/^\s*>/.test(line)) {
+      const content = line.replace(/^\s*>+\s?/, '');
+      out.push('§o' + processInline(content) + '§r');
+      continue;
+    }
+
+    //  ---- images or html inline -> unsupported
+    if (/^!\[.*\]\(.*\)/.test(line) || /<[^>]+>/.test(line)) {
+      out.push(UNSUPPORTED_MSG);
+      continue;
+    }
+
+    //  ---- unordered list (-, *, +) -> bullet + inline
+    if (/^\s*[-*+]\s+/.test(line)) {
+      const item = line.replace(/^\s*[-*+]\s+/, '');
+      out.push('• ' + processInline(item));
+      continue;
+    }
+
+    //  ---- ordered list (1. 2. ...) -> bullet as well
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const item = line.replace(/^\s*\d+\.\s+/, '');
+      out.push('• ' + processInline(item));
+      continue;
+    }
+
+    //  ---- default: process inline formatting
+    // empty line -> keep empty
+    if (line.trim() === '') {
+      out.push('');
+      continue;
+    }
+
+    out.push(processInline(line));
+  }
+
+  // join with newline and return
+  return out.join('\n');
 }
 
 // Time
@@ -319,7 +540,7 @@ system.run(() => {
 
 async function update_github_data() {
   try {
-    fetchViaInternetAPI("https://api.github.com/repos/TheFelixLive/Level=Boader/releases")
+    fetchViaInternetAPI("https://api.github.com/repos/TheFelixLive/Level-Boader/releases")
     .then(result => {
       print("API-Antwort erhalten");
 
@@ -398,6 +619,8 @@ function spawnBorderParticles(player, level) {
   const pz = player.location.z;
   const radius = 10;
 
+  let save_data = load_save_data()
+
   // Bereich 5 Blöcke über und unter dem Spieler
   const yStart = Math.floor(py - 2);
   const yEnd   = Math.floor(py + 4);
@@ -410,7 +633,7 @@ function spawnBorderParticles(player, level) {
       for (let z = zStart; z <= zEnd; z++) {
         for (let y = yStart; y <= yEnd; y++) {
           try {
-            player.spawnParticle("minecraft:basic_portal_particle", { x: borderX, y: y, z: z });
+            player.spawnParticle(border_effects_list[save_data[0].border_effects_index].id, { x: borderX, y: y, z: z });
           } catch (e) {
           }
         }
@@ -426,7 +649,7 @@ function spawnBorderParticles(player, level) {
       for (let x = xStart; x <= xEnd; x++) {
         for (let y = yStart; y <= yEnd; y++) {
           try {
-            player.spawnParticle("minecraft:basic_portal_particle", { x: x, y: y, z: borderZ });
+            player.spawnParticle(border_effects_list[save_data[0].border_effects_index].id, { x: x, y: y, z: borderZ });
           } catch (e) {
           }
         }
@@ -452,6 +675,129 @@ world.afterEvents.playerSpawn.subscribe(async (eventData) => {
 });
 
 
+/*------------------------
+ Config Menu
+-------------------------*/
+
+let border_effects_list = [
+  {name: "Portal", textures: "", id: "minecraft:basic_portal_particle"},
+  {name: "Wind charged", id: "minecraft:wind_charged_ambient"},
+]
+
+function config(player) {
+  let form = new ActionFormData()
+  let actions = []
+  let save_data = load_save_data()
+  let effect = border_effects_list[save_data[0].border_effects_index]
+  form.title("Config Menu")
+
+  form.body("Select an Option!");
+
+
+  if (effect.textures) {
+    form.button("Border effects\n§9"+effect.name, effect.textures);
+  } else {
+    form.button("Border effects\n§9"+effect.name);
+  }
+  actions.push(() => {
+    border_effect(player)
+  });
+
+  if (world.getAllPlayers().length > 1) {
+    let val = save_data[0].one_boarder
+    form.button("One boarder for all players\n"+ (val? "§aon" : "§coff"),val ? "textures/ui/toggle_on" : "textures/ui/toggle_off");
+    actions.push(() => {
+      save_data[0].one_boarder == true? save_data[0].one_boarder = false : save_data[0].one_boarder = true
+      update_save_data(save_data)
+      config(player)
+  });
+  }
+
+  form.divider()
+  form.button("");
+  actions.push(() => {
+    world.scoreboard.addObjective("ccs_data");
+    world.scoreboard.getObjective("ccs_data").setScore(JSON.stringify({event: "ccs_main", data:{source: version_info.uuid}}), 1);
+    player.runCommand("scriptevent ccs:data");
+  });
+
+  form.show(player).then((response) => {
+    if (response.selection == undefined ) {
+      world.scoreboard.addObjective("ccs_data");
+      world.scoreboard.getObjective("ccs_data").setScore(JSON.stringify({event: "ccs_close_menu", data:{target: "main"}}), 1);
+      player.runCommand("scriptevent ccs:data");
+    }
+    if (response.selection !== undefined && actions[response.selection]) {
+      actions[response.selection]();
+    }
+  });
+}
+
+function border_effect(player) {
+  let form = new ActionFormData()
+  let actions = []
+  let save_data = load_save_data()
+  form.title("Border effect")
+
+  form.body("Select your Border effect!");
+
+
+  const selectedIndex = save_data[0].border_effects_index;
+  const selectedEffect = border_effects_list[selectedIndex];
+  const otherEffects = border_effects_list.filter((_, i) => i !== selectedIndex);
+
+  if (selectedEffect) {
+    if (selectedEffect.textures) {
+      form.button(selectedEffect.name + "\n§2(selected)", selectedEffect.textures);
+    } else {
+      form.button(selectedEffect.name + "\n§2(selected)");
+    }
+
+    actions.push(() => {
+      save_data[0].border_effects_index = selectedIndex;
+      update_save_data(save_data);
+      border_effect(player)
+    });
+
+    if (otherEffects.length > 0) {
+      form.divider();
+    }
+  }
+
+  otherEffects.forEach((effect) => {
+    const originalIndex = border_effects_list.indexOf(effect);
+
+    if (effect.textures) {
+      form.button(effect.name, effect.textures);
+    } else {
+      form.button(effect.name);
+    }
+
+    actions.push(() => {
+      save_data[0].border_effects_index = originalIndex;
+      update_save_data(save_data);
+      border_effect(player)
+    });
+  });
+
+
+  form.divider()
+  form.button("");
+  actions.push(() => {
+    config(player)
+  });
+
+  form.show(player).then((response) => {
+    if (response.selection == undefined ) {
+      world.scoreboard.addObjective("ccs_data");
+      world.scoreboard.getObjective("ccs_data").setScore(JSON.stringify({event: "ccs_close_menu", data:{target: "main"}}), 1);
+      player.runCommand("scriptevent ccs:data");
+    }
+    if (response.selection !== undefined && actions[response.selection]) {
+      actions[response.selection]();
+    }
+  });
+}
 
 /*------------------------
  Dictionary
@@ -638,7 +984,6 @@ function dictionary_about_changelog_view(player, version) {
   if (version.name == version_info.version) return dictionary_about_changelog_legacy(player, build_date)
   const form = new ActionFormData().title("Changelog - " + version.name);
 
-  // TODO: Markdown support
   form.body(markdownToMinecraft(version.body))
 
 
@@ -738,94 +1083,82 @@ function dictionary_contact(player) {
 -------------------------*/
 
 async function update_loop() {
-  let oldLevel = 0;
   await system.waitTicks(3);
+
+  if (!is_initialized) {
+    for (const p of players) {
+      p.sendMessage('§l§4[§cError§4]§r The timer is not installed correctly! Check that the timer is active and has the correct CCS version.');
+      p.playSound("random.pop");
+    }
+    return -1;
+  }
+
+  const oldLevels = {}; // oldLevels.global or oldLevels[player.id]
+  const clamp = (v, a, b) => Math.max(a, Math.min(v, b));
+  const contrib = lvl => (Number(lvl) >= 1 ? Math.floor(Number(lvl)) : 0.5);
+  const finalize = sum => (sum >= 1 ? Math.floor(sum) : 0.5);
+
   while (true) {
+    const saveData = load_save_data();
+    const players = world.getAllPlayers();
+    const one = !!(saveData[0] && saveData[0].one_boarder === true);
 
-    for (const player of world.getAllPlayers()) {
+    // Global: sum contributions, then finalize to integer (or 0.5)
+    const globalSum = one ? players.reduce((s, pl) => s + contrib(pl.level), 0) : null;
+    const globalRadius = one ? finalize(globalSum) : null;
+    const prevGlobal = one ? (Object.prototype.hasOwnProperty.call(oldLevels, 'global') ? oldLevels.global : null) : null;
 
-      if (!is_initialized) {
-        player.sendMessage('§l§4[§cError§4]§r The timer is not installed correctly! Check that the timer is active and has the correct CCS version.');
-        player.playSound("random.pop")
-        return -1;
-      }
+    for (const player of players) {
+      const x = player.location.x, z = player.location.z;
+      const radius = one ? globalRadius : finalize(contrib(player.level));
+      const newX = clamp(x, -radius, radius);
+      const newZ = clamp(z, -radius, radius);
+      const outside = newX !== x || newZ !== z;
 
-      const x = player.location.x;
-      const z = player.location.z;
-
-      let level = Math.max(player.level, 0.5);
-      let reducedLevel = 0;
-      let xp_needed = player.totalXpNeededForNextLevel;
-
-      reducedLevel = oldLevel - level;
-      xp_needed = xp_needed - player.xpEarnedAtCurrentLevel;
-
-
-      let newX = x;
-      let newZ = z;
-      let outsideBorder = false;
-
-      if (x > level) {
-          newX = level;
-          outsideBorder = true;
-      } else if (x < -level) {
-          newX = -level;
-          outsideBorder = true;
-      }
-
-      if (z > level) {
-          newZ = level;
-          outsideBorder = true;
-      } else if (z < -level) {
-          newZ = -level;
-          outsideBorder = true;
-      }
-
-      // Out of borader message + teleport
-      if (challenge_running) {
-        if (outsideBorder && level < 24791) {
-          player.teleport({ x: newX, y: player.location.y, z: newZ });
-
-          try {
-            if (!(player.dimension.getBlock({ x: newX, y: player.location.y, z: newZ }).isAir && player.dimension.getBlock({ x: newX, y: player.location.y+1, z: newZ }).isAir)) {
-              player.teleport({ x: newX, y: (player.dimension.getTopmostBlock({x: newX, z: newZ}).y + 1), z: newZ });
-            }
-          } catch(e) {
-            player.teleport({ x: newX, y: (player.dimension.getTopmostBlock({x: newX, z: newZ}).y + 1), z: newZ });
+      if (challenge_running && outside && radius < 24791) {
+        player.teleport({ x: newX, y: player.location.y, z: newZ });
+        try {
+          const air1 = (player.dimension.getBlock({ x: newX, y: player.location.y, z: newZ }).isAir || player.dimension.getBlock({ x: newX, y: player.location.y, z: newZ }).isLiquid);
+          const air2 = (player.dimension.getBlock({ x: newX, y: player.location.y + 1, z: newZ }).isAir || player.dimension.getBlock({ x: newX, y: player.location.y + 1, z: newZ }).isLiquid);
+          const topY = player.dimension.getTopmostBlock({ x: newX, z: newZ }).y;
+          if (!(air1 && air2) || player.location.y - topY > 3) {
+            player.teleport({ x: newX, y: topY + 1, z: newZ });
           }
-
-
-
-
+        } catch (e) {
+          const topY = player.dimension.getTopmostBlock({ x: newX, z: newZ }).y;
+          player.teleport({ x: newX, y: topY + 1, z: newZ });
         }
+      }
 
-        // particle
-        if (level < 24791) {
-          spawnBorderParticles(player, level);
-        }
+      if (radius < 24791 && challenge_running) spawnBorderParticles(player, radius);
+    }
 
-        // Increas or decrese Boader message
-        if (level !== oldLevel) {
-            if (level > oldLevel && level !== 24791) {
-                player.runCommand('playsound random.orb @a');
-                player.sendMessage('§l§c[§bWorld Border§c]§r The world border expant to §l§a'+ level +' Blocks§r!');
-            }
+    function sendBorderMsg(p, newR, oldR) {
+      if (oldR === null) return; // erste Messung -> keine Nachricht
+      if (newR === 24791) {
+        p.runCommand('playsound random.orb @a');
+        p.sendMessage(`§l§c[§bWorld Border§c]§r The world border is turned off because you have reached the maximum level of §l§a${newR}§r!`);
+      } else if (newR > oldR) {
+        p.runCommand('playsound random.orb @a');
+        p.sendMessage(`§l§c[§bWorld Border§c]§r The world border expanded to §l§a${newR} Blocks§r!`);
+      } else if (newR < oldR) {
+        p.runCommand('playsound note.bassattack @a');
+        p.sendMessage(`§l§c[§bWorld Border§c]§r The world border reduced by §l§a${oldR - newR} Block${oldR - newR === 1 ? '' : 's'}§r! Now it is §l§a${newR} Blocks§r!`);
+      }
+    }
 
-            if (level < oldLevel && level !== 24791) {
-                player.runCommand('playsound note.bassattack @a');
-
-                player.sendMessage(
-                  `§l§c[§bWorld Border§c]§r The world border reduced by §l§a${reducedLevel} Block${reducedLevel === 1 ? '' : 's'}§r! Now it is §l§a${level} Blocks§r!`
-                );
-
-            }
-
-            if (level == 24791) {
-                player.runCommand('playsound random.orb @a');
-                player.sendMessage('§l§c[§bWorld Border§c]§r The world border is turned off because you have reached the maximum level of §l§a'+ level +'§r!');
-            }
-
-            oldLevel = level;
+    if (one) {
+      if (globalRadius !== prevGlobal) {
+        for (const p of players) sendBorderMsg(p, globalRadius, prevGlobal);
+        oldLevels.global = globalRadius;
+      }
+    } else {
+      for (const p of players) {
+        const r = finalize(contrib(p.level));
+        const prev = Object.prototype.hasOwnProperty.call(oldLevels, p.id) ? oldLevels[p.id] : null;
+        if (r !== prev) {
+          sendBorderMsg(p, r, prev);
+          oldLevels[p.id] = r;
         }
       }
     }
@@ -833,5 +1166,10 @@ async function update_loop() {
     await system.waitTicks(1);
   }
 }
+
+
+
+
+
 
 system.run(() => update_loop());
