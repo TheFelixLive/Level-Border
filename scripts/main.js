@@ -5,9 +5,9 @@ import { ActionFormData, ModalFormData, MessageFormData  } from "@minecraft/serv
 const version_info = {
   name: "Level = Border",
   version: "v.3.1.0",
-  build: "B007",
+  build: "B008",
   release_type: 0, // 0 = Development version (with debug); 1 = Beta version; 2 = Stable version
-  unix: 1760717264,
+  unix: 1760734398,
   uuid: "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
   changelog: {
     // new_features
@@ -1134,8 +1134,10 @@ async function update_loop() {
     }
 
     function sendBorderMsg(p, newR, oldR) {
-      if (oldR === null) return; // erste Messung -> keine Nachricht
-      if (newR === 24791) {
+      if (oldR === null) {
+        p.runCommand('playsound random.orb @a');
+        p.sendMessage(`§l§c[§bWorld Border§c]§r The world border is at §l§a${newR} Blocks§r!`);
+      } else if (newR === 24791) {
         p.runCommand('playsound random.orb @a');
         p.sendMessage(`§l§c[§bWorld Border§c]§r The world border is turned off because you have reached the maximum level of §l§a${newR}§r!`);
       } else if (newR > oldR) {
