@@ -15,7 +15,8 @@ With in the Configuration you can chose the **border effect** and how it should 
 | Every player has it's **own little border** & it increases with each level | All players have the **same border** & in increases with every level from every player |
 ---
 
-<img src="https://github.com/user-attachments/assets/3d074295-bde3-4b05-bca8-18332a1d064b" width="1920" height="auto" />
+<img src="https://github.com/user-attachments/assets/9d738377-6c89-46a6-8fdc-ab8e2694e23a" width="1920" height="auto" />
+
 
 # Installation
 > [!NOTE]
