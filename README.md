@@ -7,10 +7,19 @@ Are you bored of defeating the Ender Dragon for the 600th time?
 In this Minecraft Bedrock Challenge, you have a border that increases with each level!
 Can you defeat the Wither or Ender Dragon with it?
 
+# Customization
+With in the Configuration you can chose the **border effect** and how it should **behave**:
+
+| Default | One boarder for all players |
+|--------|--------|
+| Every player has it's **own little border** & it increases with each level | All players have the **same border** & in increases with every level from every player |
+---
+
+<img src="https://github.com/user-attachments/assets/3d074295-bde3-4b05-bca8-18332a1d064b" width="1920" height="auto" />
 
 # Installation
 > [!NOTE]
-> Make sure that both the Challenge and the Timer are using the same CCS (Challenge Communication System) Version!
+> Make sure that both the Challenge and the [Timer](https://github.com/TheFelixLive/Timer-V/releases/latest) are using the same CCS (Challenge Communication System) Version!
 
 1. **Download** the latest challenge release from [here](https://github.com/TheFelixLive/Level-Border/releases/latest).
 2. **Download** the best timer release, mostlikely from [here](https://github.com/TheFelixLive/Timer-V/releases/latest).
@@ -22,7 +31,7 @@ Can you defeat the Wither or Ender Dragon with it?
 8. `Play` or `Create` your World
 
 # Credits
-- **Inspiration for the challenges**: [BastiGHG](https://www.youtube.com/watch?v=Mu67I1qxYL8&list=PLffX9yMQbaQjWGBY1LS9RDH-Wu65zwQyQ)
+- **Inspiration for the challenge**: [BastiGHG](https://www.youtube.com/watch?v=Mu67I1qxYL8&list=PLffX9yMQbaQjWGBY1LS9RDH-Wu65zwQyQ)
 
 # License & Attribution
 This project is licensed under the [MIT License](./LICENSE).

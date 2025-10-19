@@ -4,26 +4,22 @@ import { ActionFormData, ModalFormData, MessageFormData  } from "@minecraft/serv
 
 const version_info = {
   name: "Level = Border",
-  version: "v.3.1.0",
-  build: "B008",
-  release_type: 0, // 0 = Development version (with debug); 1 = Beta version; 2 = Stable version
-  unix: 1760734398,
+  version: "v.3.1.1",
+  build: "B009",
+  release_type: 2, // 0 = Development version (with debug); 1 = Beta version; 2 = Stable version
+  unix: 1760873876,
   uuid: "224e31a2-8c9c-451c-a1af-d92ec41d0d08",
   changelog: {
     // new_features
     new_features: [
-      "The boarder particle effect can now be adjusted",
-      "One boarder for all players can now be adjusted"
     ],
     // general_changes
     general_changes: [
-      "Added Support for CCS V2"
     ],
     // bug_fixes
     bug_fixes: [
+      "Fixed border notifications in multiplayer",
       "Fixed online Changelog",
-      "Fixed a critical bug that prevented multiplayer",
-      "Border teleportation should be more reliable",
     ]
   }
 }
@@ -540,7 +536,7 @@ system.run(() => {
 
 async function update_github_data() {
   try {
-    fetchViaInternetAPI("https://api.github.com/repos/TheFelixLive/Level-Boader/releases")
+    fetchViaInternetAPI("https://api.github.com/repos/TheFelixLive/Level-Border/releases")
     .then(result => {
       print("API-Antwort erhalten");
 
@@ -1098,69 +1094,71 @@ async function update_loop() {
   const contrib = lvl => (Number(lvl) >= 1 ? Math.floor(Number(lvl)) : 0.5);
   const finalize = sum => (sum >= 1 ? Math.floor(sum) : 0.5);
 
+  function sendBorderMsg(p, newR, oldR) {
+    if (oldR === null) {
+      p.runCommand('playsound random.orb @a');
+      p.sendMessage(`§l§c[§bWorld Border§c]§r The world border is at §l§a${newR} Blocks§r!`);
+    } else if (newR === 24791) {
+      p.runCommand('playsound random.orb @a');
+      p.sendMessage(`§l§c[§bWorld Border§c]§r The world border is turned off because you have reached the maximum level of §l§a${newR}§r!`);
+    } else if (newR > oldR) {
+      p.runCommand('playsound random.orb @a');
+      p.sendMessage(`§l§c[§bWorld Border§c]§r The world border expanded to §l§a${newR} Blocks§r!`);
+    } else if (newR < oldR) {
+      p.runCommand('playsound note.bassattack @a');
+      p.sendMessage(`§l§c[§bWorld Border§c]§r The world border reduced by §l§a${oldR - newR} Block${oldR - newR === 1 ? '' : 's'}§r! Now it is §l§a${newR} Blocks§r!`);
+    }
+  }
+
   while (true) {
-    const saveData = load_save_data();
-    const players = world.getAllPlayers();
-    const one = !!(saveData[0] && saveData[0].one_boarder === true);
+    if (challenge_running) {
+      const saveData = load_save_data();
+      const players = world.getAllPlayers();
+      const one = !!(saveData[0] && saveData[0].one_boarder === true);
 
-    // Global: sum contributions, then finalize to integer (or 0.5)
-    const globalSum = one ? players.reduce((s, pl) => s + contrib(pl.level), 0) : null;
-    const globalRadius = one ? finalize(globalSum) : null;
-    const prevGlobal = one ? (Object.prototype.hasOwnProperty.call(oldLevels, 'global') ? oldLevels.global : null) : null;
+      // Global: sum contributions, then finalize to integer (or 0.5)
+      const globalSum = one ? players.reduce((s, pl) => s + contrib(pl.level), 0) : null;
+      const globalRadius = one ? finalize(globalSum) : null;
+      const prevGlobal = one ? (Object.prototype.hasOwnProperty.call(oldLevels, 'global') ? oldLevels.global : null) : null;
 
-    for (const player of players) {
-      const x = player.location.x, z = player.location.z;
-      const radius = one ? globalRadius : finalize(contrib(player.level));
-      const newX = clamp(x, -radius, radius);
-      const newZ = clamp(z, -radius, radius);
-      const outside = newX !== x || newZ !== z;
+      for (const player of players) {
+        const x = player.location.x, z = player.location.z;
+        const radius = one ? globalRadius : finalize(contrib(player.level));
+        const newX = clamp(x, -radius, radius);
+        const newZ = clamp(z, -radius, radius);
+        const outside = newX !== x || newZ !== z;
 
-      if (challenge_running && outside && radius < 24791) {
-        player.teleport({ x: newX, y: player.location.y, z: newZ });
-        try {
-          const air1 = (player.dimension.getBlock({ x: newX, y: player.location.y, z: newZ }).isAir || player.dimension.getBlock({ x: newX, y: player.location.y, z: newZ }).isLiquid);
-          const air2 = (player.dimension.getBlock({ x: newX, y: player.location.y + 1, z: newZ }).isAir || player.dimension.getBlock({ x: newX, y: player.location.y + 1, z: newZ }).isLiquid);
-          const topY = player.dimension.getTopmostBlock({ x: newX, z: newZ }).y;
-          if (!(air1 && air2) || player.location.y - topY > 3) {
+        if (outside && radius < 24791) {
+          player.teleport({ x: newX, y: player.location.y, z: newZ });
+          try {
+            const air1 = (player.dimension.getBlock({ x: newX, y: player.location.y, z: newZ }).isAir || player.dimension.getBlock({ x: newX, y: player.location.y, z: newZ }).isLiquid);
+            const air2 = (player.dimension.getBlock({ x: newX, y: player.location.y + 1, z: newZ }).isAir || player.dimension.getBlock({ x: newX, y: player.location.y + 1, z: newZ }).isLiquid);
+            const topY = player.dimension.getTopmostBlock({ x: newX, z: newZ }).y;
+            if (!(air1 && air2) || player.location.y - topY > 3) {
+              player.teleport({ x: newX, y: topY + 1, z: newZ });
+            }
+          } catch (e) {
+            const topY = player.dimension.getTopmostBlock({ x: newX, z: newZ }).y;
             player.teleport({ x: newX, y: topY + 1, z: newZ });
           }
-        } catch (e) {
-          const topY = player.dimension.getTopmostBlock({ x: newX, z: newZ }).y;
-          player.teleport({ x: newX, y: topY + 1, z: newZ });
         }
+
+        if (radius < 24791) spawnBorderParticles(player, radius);
       }
 
-      if (radius < 24791 && challenge_running) spawnBorderParticles(player, radius);
-    }
-
-    function sendBorderMsg(p, newR, oldR) {
-      if (oldR === null) {
-        p.runCommand('playsound random.orb @a');
-        p.sendMessage(`§l§c[§bWorld Border§c]§r The world border is at §l§a${newR} Blocks§r!`);
-      } else if (newR === 24791) {
-        p.runCommand('playsound random.orb @a');
-        p.sendMessage(`§l§c[§bWorld Border§c]§r The world border is turned off because you have reached the maximum level of §l§a${newR}§r!`);
-      } else if (newR > oldR) {
-        p.runCommand('playsound random.orb @a');
-        p.sendMessage(`§l§c[§bWorld Border§c]§r The world border expanded to §l§a${newR} Blocks§r!`);
-      } else if (newR < oldR) {
-        p.runCommand('playsound note.bassattack @a');
-        p.sendMessage(`§l§c[§bWorld Border§c]§r The world border reduced by §l§a${oldR - newR} Block${oldR - newR === 1 ? '' : 's'}§r! Now it is §l§a${newR} Blocks§r!`);
-      }
-    }
-
-    if (one) {
-      if (globalRadius !== prevGlobal) {
-        for (const p of players) sendBorderMsg(p, globalRadius, prevGlobal);
-        oldLevels.global = globalRadius;
-      }
-    } else {
-      for (const p of players) {
-        const r = finalize(contrib(p.level));
-        const prev = Object.prototype.hasOwnProperty.call(oldLevels, p.id) ? oldLevels[p.id] : null;
-        if (r !== prev) {
-          sendBorderMsg(p, r, prev);
-          oldLevels[p.id] = r;
+      if (one) {
+        if (globalRadius !== prevGlobal) {
+          for (const p of players) sendBorderMsg(p, globalRadius, prevGlobal);
+          oldLevels.global = globalRadius;
+        }
+      } else {
+        for (const p of players) {
+          const r = finalize(contrib(p.level));
+          const prev = Object.prototype.hasOwnProperty.call(oldLevels, p.id) ? oldLevels[p.id] : null;
+          if (r !== prev) {
+            sendBorderMsg(p, r, prev);
+            oldLevels[p.id] = r;
+          }
         }
       }
     }
